@@ -13,9 +13,9 @@
 
 Download the Jira CLI JAR from here - https://bobswift.atlassian.net/wiki/download/attachments/16285777/jira-cli-3.9.0-distribution.zip?version=1&modificationDate=1401618313091&cacheVersion=1&api=v2
 
-Note: Version 4 and above require a connector installed in Jira. Version 3.9.0 does not and has all the necessary features. Instead of asking the Jira administrator to install this connector, it is simpler to use an older version.
+> Note: Version 4 and above require a connector installed in Jira. Version 3.9.0 does not and has all the necessary features. Instead of asking the Jira administrator to install this connector, it is simpler to use an older version.
 
-Extract the zip file some place for permanent storage. Inside of the extract directory, open the ```jira.sh``` file. Modify the Java command to resemble the following:
+Extract the zip file some place for permanent storage. Inside of the extract directory, open the ```jira.sh``` file. Modify the Java command to resemble the following, providing values for the Jira username and password:
 
 ```java -jar `dirname $0`/lib/jira-cli-3.9.0.jar --server http://issues.liferay.com --user ${jira.username} --password ${jira.user.password} "$@"```
 
@@ -35,7 +35,7 @@ Hub is a wrapper for Git that is tailed for GitHub. Hub makes it much simpler to
 
 #### Bash functions
 
-Copy the functions from ```bpr``` to your ```.bash_aliases``` file so that you are able to call the functions from the command line.
+Copy the functions from the [bpr](https://github.com/jonathanmccann/backport-automator/blob/master/bpr) file to your ```.bash_aliases``` file so that you are able to call the functions from the command line.
 
 At the start of the ```bpr``` file there are four configurable values:
 
@@ -46,6 +46,12 @@ For the current user values, enter in your GitHub and Jira usernames. For the re
 Note that the reviewer values are simply defaults. If you wish to submit the backport to a different review, you will be able to specify their name on the fly.
 
 ## Usage
+
+### Preparing to Backport
+
+This function assumes that you are either backporting to **ee-6.2.x** or **ee-7.0.x**. Other versions are not supported at this time.
+
+To begin, be sure that your **EE master branch** is up to date and contains the fix that you wish to backport. Then checkout either **ee-6.2.x** or **ee-7.0.x**. There is no need to create a new branch as the function does that for you.
 
 ### Beginning Backport
 
@@ -73,7 +79,7 @@ There are two distinct flags that are used and seen in the above messages:
 
 ##### Submit Flag
 
-The ```-s``` flag signifies to the function that the current branch is done cherry picking and ready to be pushed through the BPR workflow.
+The ```-s``` flag signifies to the function that the current branch is done cherry picking and ready to be pushed through the BPR workflow. Note that the function will not ask if you wish to test the changes, so please do so before running this command.
 
 It requires a single argument and the argument is the **LPS number**.
 
@@ -107,3 +113,7 @@ Enter the reviewer's Jira name and press [ENTER] (jonathanmccann):
 ```
 
 The values within the parenthesis are the default values you set for ```DEFAULTGITHUBREVIEWER, and DEFAULTJIRAREVIEWER```. If you press enter without entering any text, the default usernames will be used. If you wish to send the pull request to a different user, then you are able to manually type in their usernames.
+
+## Potential Issues
+
+Since the function uses commit messages to find the necessary commits to backport, if another commit contains the LPS number, it will also be cherry picked. Each commit that is cherry picked is shown, so please be sure that only the commits you want are included in your branch.
