@@ -23,6 +23,10 @@ Finally, add an alias to your ```.bash_aliases``` file similar to the following:
 
 ```alias jira=${path.to.extracted.folder}/jira/jira.sh```
 
+##### Windows
+
+You can use ```git-bash```, the ```.bash_aliases``` file is under ```c:\Users\${username}``` by default.
+
 To make sure everything is set up correctly, try running this command:
 
 ```jira -a getIssue --issue "LPS-12345"```
