@@ -113,33 +113,35 @@ function submitBpr() {
 
 	echo -e "\nSubmitting current branch for BPR\n"
 
-	BACKPORTVERION=ee-$(grep -F lp.version.major= release.properties | cut -d'=' -f 2).x
+	BACKPORTVERION=$(grep -F lp.version.major= release.properties | cut -d'=' -f 2).x
 
-	if [[ $BACKPORTVERION == ee-7.0.x ]]
+	if [[ $BACKPORTVERION == 7.0.x ]]
 	then
-		BPR=$(jira -a getIssueList --search "project = BPR AND issue in linkedIssues($1, 'relates', 'is related to') AND 'Backport Version' = '7.0 EE (Fix Pack or MP Release)'" --limit 1 | grep -o BPR-[0-9]*)
-	elif [[ $BACKPORTVERION == ee-6.2.x ]]
+		BPR=$(curl -s -n -X GET -H "Content-Type: application/json" "https://issues.liferay.com/rest/api/2/search?jql=project+%3D+BPR+AND+issue+in+linkedIssues('$1'%2C+'relates'%2C+'is+related+to')+AND+'Backport+Version'+%3D+'7.0+EE+(Fix+Pack+or+MP+Release)'&maxResults=1&fields=key" | jq -r '.issues | .[0].key')
+	elif [[ $BACKPORTVERION == 6.2.x ]]
 	then
-		BPR=$(jira -a getIssueList --search "project = BPR AND issue in linkedIssues($1, 'relates', 'is related to') AND 'Backport Version' = '6.2 EE (fix pack)'" --limit 1 | grep -o BPR-[0-9]*)
+		BACKPORTVERION=ee-6.2.x
+
+		BPR=$(curl -s -n -X GET -H "Content-Type: application/json" "https://issues.liferay.com/rest/api/2/search?jql=project+%3D+BPR+AND+issue+in+linkedIssues('$1'%2C+'relates'%2C+'is+related+to')+AND+'Backport+Version'+%3D+'6.2+EE+(fix+pack)'&maxResults=1&fields=key" | jq -r '.issues | .[0].key')
 	else
-		echo "Unknown backport version. Please either checkout ee-7.0.x or ee-6.2.x."
+		echo "Unknown backport version. Please either checkout 7.0.x or ee-6.2.x."
 
 		return
 	fi
 
-	if [[ -z $BPR ]]
+	if [[ $BPR == "null" ]]
 	then
 		echo No BPR ticket found. Creating new BPR ticket.
 
-		if [[ $BACKPORTVERION == ee-7.0.x ]]
+		if [[ $BACKPORTVERION == 7.0.x ]]
 		then
-			BPR=$(jira -a createIssue --project "BPR" --type "Backport Request" --summary "70x $1" --field "customfield_11531" --value "Support" --field2 "customfield_14424" --values2 "23335" | awk '{printf $2}')
-		elif [[ $BACKPORTVERION == ee-6.2.x ]]
+			BPR=$(curl -s -n -X POST --data '{"fields": {"project":{"key":"BPR"}, "summary":"70x '$1'", "issuetype":{"name":"Backport Request"}, "customfield_11531":{"value":"Support"}, "customfield_14424":{"id":"23335"}}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue | jq -r '.key')
+		elif [[ $BACKPORTVERION == 6.2.x ]]
 		then
-			BPR=$(jira -a createIssue --project "BPR" --type "Backport Request" --summary "62x $1" --field "customfield_11531" --value "Support" --field2 "customfield_14424" --values2 "16327" | awk '{printf $2}')
+			BPR=$(curl -s -n -X POST --data '{"fields": {"project":{"key":"BPR"}, "summary":"62x '$1'", "issuetype":{"name":"Backport Request"}, "customfield_11531":{"value":"Support"}, "customfield_14424":{"id":"16327"}}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue | jq -r '.key')
 		fi
 
-		jira -a linkIssue --issue "$1" --toIssue "$BPR" --link "relationship" > /dev/null
+		curl -s -n -X POST --data '{"type":{"name":"Relationship"}, "inwardIssue":{"key":"'$1'"}, "outwardIssue":{"key":"'$BPR'"}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issueLink > /dev/null
 	fi
 
 	# Get the reviewer's GitHub name
@@ -173,12 +175,12 @@ function submitBpr() {
 https://issues.liferay.com/browse/$1" -b $GITHUBREVIEWER:$BACKPORTVERION -h $CURRENTUSERGITHUBNAME:$CURRENTBRANCH)
 
 	# Assign the BPR ticket to the current user so they have permission to push it through the workflow
-	jira -a assignIssue --issue "$BPR" --userId "$CURRENTUSERJIRANAME" > /dev/null
+	curl -s -n -X PUT --data '{"name":"'$CURRENTUSERJIRANAME'"}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue/$BPR/assignee > /dev/null
 
 	# Progress BPR through workflow no matter what state it is in
-	jira -a progressIssue --issue "$BPR" --step "Original Fix Committed" > /dev/null 2>&1
-	jira -a progressIssue --issue "$BPR" --step "Start Progress" > /dev/null 2>&1
-	jira -a progressIssue --issue "$BPR" --step "Code Review Request" --assignee "$JIRAREVIEWER" --field "customfield_10421" --values "$PULLREQUESTURL" > /dev/null 2>&1
+	curl -s -n -X POST --data '{"transition": {"id":"21"}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue/$BPR/transitions > /dev/null
+	curl -s -n -X POST --data '{"transition": {"id":"31"}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue/$BPR/transitions > /dev/null
+	curl -s -n -X POST --data '{"fields": {"assignee":{"name":"'$JIRAREVIEWER'"}, "customfield_10421":"'$PULLREQUESTURL'"}, "transition": {"id":"41"}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue/$BPR/transitions > /dev/null
 
 	echo
 	echo Pull Request - $PULLREQUESTURL

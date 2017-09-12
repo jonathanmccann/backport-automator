@@ -9,27 +9,15 @@
 
 ## Prerequisites
 
-#### Jira CLI
+#### Curl and .netrc
 
-Download the Jira CLI JAR from here - https://bobswift.atlassian.net/wiki/download/attachments/16285777/jira-cli-3.9.0-distribution.zip?version=1&modificationDate=1401618313091&cacheVersion=1&api=v2
+This script makes use of JIRA's REST API via curl. In order to streamline the process, we can save our credentials in a **.netrc** file. To do this, create a **.netrc** file within your home directory making it readible and writable only by the owner. The syntax for this file is as follows:
 
-> Note: Version 4 and above require a connector installed in Jira. Version 3.9.0 does not and has all the necessary features. Instead of asking the Jira administrator to install this connector, it is simpler to use an older version.
+```
+machine issues.liferay.com login XXXX password XXXX
+```
 
-Extract the zip file some place for permanent storage. Inside of the extract directory, open the ```jira.sh``` file. Modify the Java command to resemble the following, providing values for the Jira username and password:
-
-```java -jar `dirname $0`/lib/jira-cli-3.9.0.jar --server http://issues.liferay.com --user ${jira.username} --password ${jira.user.password} "$@"```
-
-Finally, add an alias to your ```.bash_aliases``` file similar to the following:
-
-```alias jira=${path.to.extracted.folder}/jira/jira.sh```
-
-If you are on Windows, you can use ```git-bash``` and the ```.bash_aliases``` file is under ```C:\Users\${username}``` by default.
-
-To make sure everything is set up correctly, try running this command:
-
-```jira -a getIssue --issue "LPS-12345"```
-
-You should receive back information about LPS-12345. If you do not, then something is not configured correctly.
+where **login** is your JIRA screen name and **password** is your JIRA password.
 
 #### Hub
 
@@ -51,9 +39,9 @@ Note that the reviewer values are simply defaults. If you wish to submit the bac
 
 ### Preparing to Backport
 
-This function assumes that you are either backporting to **ee-6.2.x** or **ee-7.0.x**. Other versions are not supported at this time.
+This function assumes that you are either backporting to **ee-6.2.x** or **7.0.x**. Other versions are not supported at this time.
 
-To begin, be sure that your **EE master branch** is up to date and contains the fix that you wish to backport. Then checkout either **ee-6.2.x** or **ee-7.0.x**. There is no need to create a new branch as the function does that for you.
+To begin, be sure that your **EE master branch** is up to date and contains the fix that you wish to backport. Then checkout either **ee-6.2.x** or **7.0.x**. There is no need to create a new branch as the function does that for you.
 
 ### Beginning Backport
 
