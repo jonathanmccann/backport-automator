@@ -45,7 +45,7 @@ function cherryPickCommit() {
 
 	if [[ 0 -eq ${#HASHES[@]} ]]
 	then
-		echo "No commits match $1. Please updated your master branch or confirm the commit message is correct."
+		echo "No commits match $1. Please update your master branch or confirm the commit message is correct."
 
 		return
 	fi
@@ -115,7 +115,10 @@ function submitBpr() {
 
 	BACKPORTVERION=$(grep -F lp.version.major= release.properties | cut -d'=' -f 2).x
 
-	if [[ $BACKPORTVERION == 7.0.x ]]
+	if [[ $BACKPORTVERION == 7.1.x ]]
+	then
+		BPR=$(curl -s -n -X GET -H "Content-Type: application/json" "https://issues.liferay.com/rest/api/2/search?jql=project+%3D+BPR+AND+issue+in+linkedIssues('$1'%2C+'relates'%2C+'is+related+to')+AND+'Backport+Version'+%3D+'7.1+EE+(Fix+Pack+or+MP+Release)'&maxResults=1&fields=key" | jq -r '.issues | .[0].key')
+	elif [[ $BACKPORTVERION == 7.0.x ]]
 	then
 		BPR=$(curl -s -n -X GET -H "Content-Type: application/json" "https://issues.liferay.com/rest/api/2/search?jql=project+%3D+BPR+AND+issue+in+linkedIssues('$1'%2C+'relates'%2C+'is+related+to')+AND+'Backport+Version'+%3D+'7.0+EE+(Fix+Pack+or+MP+Release)'&maxResults=1&fields=key" | jq -r '.issues | .[0].key')
 	elif [[ $BACKPORTVERION == 6.2.x ]]
@@ -133,7 +136,10 @@ function submitBpr() {
 	then
 		echo No BPR ticket found. Creating new BPR ticket.
 
-		if [[ $BACKPORTVERION == 7.0.x ]]
+		if [[ $BACKPORTVERION == 7.1.x ]]
+		then
+			BPR=$(curl -s -n -X POST --data '{"fields": {"project":{"key":"BPR"}, "summary":"71x '$1'", "issuetype":{"name":"Backport Request"}, "customfield_11531":{"value":"Support"}, "customfield_14424":{"id":"28812"}}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue | jq -r '.key')
+		elif [[ $BACKPORTVERION == 7.0.x ]]
 		then
 			BPR=$(curl -s -n -X POST --data '{"fields": {"project":{"key":"BPR"}, "summary":"70x '$1'", "issuetype":{"name":"Backport Request"}, "customfield_11531":{"value":"Support"}, "customfield_14424":{"id":"23335"}}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue | jq -r '.key')
 		elif [[ $BACKPORTVERION == 6.2.x ]]
