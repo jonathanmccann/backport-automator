@@ -39,9 +39,9 @@ Note that the reviewer values are simply defaults. If you wish to submit the bac
 
 ### Preparing to Backport
 
-This function assumes that you are either backporting to **ee-6.2.x** or **7.0.x**. Other versions are not supported at this time.
+This function assumes that you are backporting to **ee-6.2.x**, **7.0.x**, **7.1.x**, or **7.2.x**. Other versions are not supported at this time.
 
-To begin, be sure that your **EE master branch** is up to date and contains the fix that you wish to backport. Then checkout either **ee-6.2.x** or **7.0.x**. There is no need to create a new branch as the function does that for you.
+To begin, be sure that your **EE master branch** is up to date and contains the fix that you wish to backport. Then checkout **ee-6.2.x**, **7.0.x**, **7.1.x**, or **7.2.x**. There is no need to create a new branch as the function does that for you.
 
 ### Beginning Backport
 
@@ -102,7 +102,7 @@ Enter the reviewer's GitHub name and press [ENTER] (jonathan.mccann):
 Enter the reviewer's Jira name and press [ENTER] (jonathanmccann): 
 ```
 
-The values within the parenthesis are the default values you set for ```DEFAULTGITHUBREVIEWER, and DEFAULTJIRAREVIEWER```. If you press enter without entering any text, the default usernames will be used. If you wish to send the pull request to a different user, then you are able to manually type in their usernames.
+The values within the parenthesis are the default values you set for ```DEFAULTGITHUBREVIEWER``` and ```DEFAULTJIRAREVIEWER```. If you press enter without entering any text, the default usernames will be used. If you wish to send the pull request to a different user, then you are able to manually type in their usernames.
 
 ## Potential Issues
 
