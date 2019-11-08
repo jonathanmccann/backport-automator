@@ -115,7 +115,10 @@ function submitBpr() {
 
 	BACKPORTVERION=$(grep -F lp.version.major= release.properties | cut -d'=' -f 2).x
 
-	if [[ $BACKPORTVERION == 7.1.x ]]
+	if [[ $BACKPORTVERION == 7.2.x ]]
+	then
+		BPR=$(curl -s -n -X GET -H "Content-Type: application/json" "https://issues.liferay.com/rest/api/2/search?jql=project+%3D+BPR+AND+issue+in+linkedIssues('$1'%2C+'relates'%2C+'is+related+to')+AND+'Backport+Version'+%3D+'7.2+EE+(Fix+Pack+or+MP+Release)'&maxResults=1&fields=key" | jq -r '.issues | .[0].key')
+	elif [[ $BACKPORTVERION == 7.1.x ]]
 	then
 		BPR=$(curl -s -n -X GET -H "Content-Type: application/json" "https://issues.liferay.com/rest/api/2/search?jql=project+%3D+BPR+AND+issue+in+linkedIssues('$1'%2C+'relates'%2C+'is+related+to')+AND+'Backport+Version'+%3D+'7.1+EE+(Fix+Pack+or+MP+Release)'&maxResults=1&fields=key" | jq -r '.issues | .[0].key')
 	elif [[ $BACKPORTVERION == 7.0.x ]]
@@ -136,18 +139,21 @@ function submitBpr() {
 	then
 		echo No BPR ticket found. Creating new BPR ticket.
 
-		if [[ $BACKPORTVERION == 7.1.x ]]
+		if [[ $BACKPORTVERION == 7.2.x ]]
 		then
-			BPR=$(curl -s -n -X POST --data '{"fields": {"project":{"key":"BPR"}, "summary":"71x '$1'", "issuetype":{"name":"Backport Request"}, "customfield_11531":{"value":"Support"}, "customfield_14424":{"id":"28812"}}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue | jq -r '.key')
+			BPR=$(curl -s -n -X POST --data '{"fields": {"project":{"key":"BPR"}, "summary":"7.2.x '$1'", "issuetype":{"name":"Backport Request"}, "customfield_11531":{"value":"Support"}, "customfield_14424":{"id":"31686"}}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue | jq -r '.key')
+		elif [[ $BACKPORTVERION == 7.1.x ]]
+		then
+			BPR=$(curl -s -n -X POST --data '{"fields": {"project":{"key":"BPR"}, "summary":"7.1.x '$1'", "issuetype":{"name":"Backport Request"}, "customfield_11531":{"value":"Support"}, "customfield_14424":{"id":"28812"}}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue | jq -r '.key')
 		elif [[ $BACKPORTVERION == 7.0.x ]]
 		then
-			BPR=$(curl -s -n -X POST --data '{"fields": {"project":{"key":"BPR"}, "summary":"70x '$1'", "issuetype":{"name":"Backport Request"}, "customfield_11531":{"value":"Support"}, "customfield_14424":{"id":"23335"}}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue | jq -r '.key')
+			BPR=$(curl -s -n -X POST --data '{"fields": {"project":{"key":"BPR"}, "summary":"7.0.x '$1'", "issuetype":{"name":"Backport Request"}, "customfield_11531":{"value":"Support"}, "customfield_14424":{"id":"23335"}}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue | jq -r '.key')
 		elif [[ $BACKPORTVERION == 6.2.x ]]
 		then
-			BPR=$(curl -s -n -X POST --data '{"fields": {"project":{"key":"BPR"}, "summary":"62x '$1'", "issuetype":{"name":"Backport Request"}, "customfield_11531":{"value":"Support"}, "customfield_14424":{"id":"16327"}}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue | jq -r '.key')
+			BPR=$(curl -s -n -X POST --data '{"fields": {"project":{"key":"BPR"}, "summary":"6.2.x '$1'", "issuetype":{"name":"Backport Request"}, "customfield_11531":{"value":"Support"}, "customfield_14424":{"id":"16327"}}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue | jq -r '.key')
 		fi
 
-		curl -s -n -X POST --data '{"type":{"name":"Relationship"}, "inwardIssue":{"key":"'$1'"}, "outwardIssue":{"key":"'$BPR'"}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issueLink > /dev/null
+		curl -s -n -X POST --data '{"type":{"name":"Relationship"}, "inwardIssue":{"key":"'$BPR'"}, "outwardIssue":{"key":"'$1'"}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issueLink > /dev/null
 	fi
 
 	# Get the reviewer's GitHub name
@@ -174,7 +180,7 @@ function submitBpr() {
 	git push origin $CURRENTBRANCH > /dev/null 2>&1
 
 	# Create the pull request
-	PULLREQUESTURL=$(git pull-request -m "$BPR / $1 | $BACKPORTVERION
+	PULLREQUESTURL=$(git pull-request -m "$1 | $BACKPORTVERION
 
 	https://issues.liferay.com/browse/$BPR
 
