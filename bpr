@@ -3,10 +3,8 @@
 #
 
 CURRENTUSERGITHUBNAME=
-CURRENTUSERJIRANAME=
 
 DEFAULTGITHUBREVIEWER=
-DEFAULTJIRAREVIEWER=
 
 #
 # Backport Automator
@@ -115,53 +113,6 @@ function submitBpr() {
 
 	BACKPORTVERION=$(grep -F lp.version.major= release.properties | cut -d'=' -f 2).x
 
-	if [[ $BACKPORTVERION == 7.3.x ]]
-	then
-		BPR=$(curl -s -n -X GET -H "Content-Type: application/json" "https://issues.liferay.com/rest/api/2/search?jql=project+%3D+BPR+AND+issue+in+linkedIssues('$1'%2C+'relates'%2C+'is+related+to')+AND+'Backport+Version'+%3D+'7.3+EE+(Fix+Pack+or+MP+Release)'&maxResults=1&fields=key" | jq -r '.issues | .[0].key')
-	elif [[ $BACKPORTVERION == 7.2.x ]]
-	then
-		BPR=$(curl -s -n -X GET -H "Content-Type: application/json" "https://issues.liferay.com/rest/api/2/search?jql=project+%3D+BPR+AND+issue+in+linkedIssues('$1'%2C+'relates'%2C+'is+related+to')+AND+'Backport+Version'+%3D+'7.2+EE+(Fix+Pack+or+MP+Release)'&maxResults=1&fields=key" | jq -r '.issues | .[0].key')
-	elif [[ $BACKPORTVERION == 7.1.x ]]
-	then
-		BPR=$(curl -s -n -X GET -H "Content-Type: application/json" "https://issues.liferay.com/rest/api/2/search?jql=project+%3D+BPR+AND+issue+in+linkedIssues('$1'%2C+'relates'%2C+'is+related+to')+AND+'Backport+Version'+%3D+'7.1+EE+(Fix+Pack+or+MP+Release)'&maxResults=1&fields=key" | jq -r '.issues | .[0].key')
-	elif [[ $BACKPORTVERION == 7.0.x ]]
-	then
-		BPR=$(curl -s -n -X GET -H "Content-Type: application/json" "https://issues.liferay.com/rest/api/2/search?jql=project+%3D+BPR+AND+issue+in+linkedIssues('$1'%2C+'relates'%2C+'is+related+to')+AND+'Backport+Version'+%3D+'7.0+EE+(Fix+Pack+or+MP+Release)'&maxResults=1&fields=key" | jq -r '.issues | .[0].key')
-	elif [[ $BACKPORTVERION == 6.2.x ]]
-	then
-		BACKPORTVERION=ee-6.2.x
-
-		BPR=$(curl -s -n -X GET -H "Content-Type: application/json" "https://issues.liferay.com/rest/api/2/search?jql=project+%3D+BPR+AND+issue+in+linkedIssues('$1'%2C+'relates'%2C+'is+related+to')+AND+'Backport+Version'+%3D+'6.2+EE+(fix+pack)'&maxResults=1&fields=key" | jq -r '.issues | .[0].key')
-	else
-		echo "Unknown backport version. Please either checkout 7.0.x or ee-6.2.x."
-
-		return
-	fi
-
-	if [[ $BPR == "null" ]]
-	then
-		echo No BPR ticket found. Creating new BPR ticket.
-
-		if [[ $BACKPORTVERION == 7.3.x ]]
-		then
-			BPR=$(curl -s -n -X POST --data '{"fields": {"project":{"key":"BPR"}, "summary":"7.3.x '$1'", "issuetype":{"name":"Backport Request"}, "customfield_11531":{"value":"Support"}, "customfield_14424":{"id":"33810"}}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue | jq -r '.key')
-		elif [[ $BACKPORTVERION == 7.2.x ]]
-		then
-			BPR=$(curl -s -n -X POST --data '{"fields": {"project":{"key":"BPR"}, "summary":"7.2.x '$1'", "issuetype":{"name":"Backport Request"}, "customfield_11531":{"value":"Support"}, "customfield_14424":{"id":"31686"}}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue | jq -r '.key')
-		elif [[ $BACKPORTVERION == 7.1.x ]]
-		then
-			BPR=$(curl -s -n -X POST --data '{"fields": {"project":{"key":"BPR"}, "summary":"7.1.x '$1'", "issuetype":{"name":"Backport Request"}, "customfield_11531":{"value":"Support"}, "customfield_14424":{"id":"28812"}}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue | jq -r '.key')
-		elif [[ $BACKPORTVERION == 7.0.x ]]
-		then
-			BPR=$(curl -s -n -X POST --data '{"fields": {"project":{"key":"BPR"}, "summary":"7.0.x '$1'", "issuetype":{"name":"Backport Request"}, "customfield_11531":{"value":"Support"}, "customfield_14424":{"id":"23335"}}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue | jq -r '.key')
-		elif [[ $BACKPORTVERION == 6.2.x ]]
-		then
-			BPR=$(curl -s -n -X POST --data '{"fields": {"project":{"key":"BPR"}, "summary":"6.2.x '$1'", "issuetype":{"name":"Backport Request"}, "customfield_11531":{"value":"Support"}, "customfield_14424":{"id":"16327"}}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue | jq -r '.key')
-		fi
-
-		curl -s -n -X POST --data '{"type":{"name":"Relationship"}, "inwardIssue":{"key":"'$BPR'"}, "outwardIssue":{"key":"'$1'"}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issueLink > /dev/null
-	fi
-
 	# Get the reviewer's GitHub name
 	echo -n "Enter the reviewer's GitHub name and press [ENTER] ($DEFAULTGITHUBREVIEWER): "
 	read GITHUBREVIEWER
@@ -188,19 +139,8 @@ function submitBpr() {
 	# Create the pull request
 	PULLREQUESTURL=$(git pull-request -m "$1 | $BACKPORTVERION
 
-	https://issues.liferay.com/browse/$BPR
-
 https://issues.liferay.com/browse/$1" -b $GITHUBREVIEWER:$BACKPORTVERION -h $CURRENTUSERGITHUBNAME:$CURRENTBRANCH)
-
-	# Assign the BPR ticket to the current user so they have permission to push it through the workflow
-	curl -s -n -X PUT --data '{"name":"'$CURRENTUSERJIRANAME'"}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue/$BPR/assignee > /dev/null
-
-	# Progress BPR through workflow no matter what state it is in
-	curl -s -n -X POST --data '{"transition": {"id":"21"}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue/$BPR/transitions > /dev/null
-	curl -s -n -X POST --data '{"transition": {"id":"31"}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue/$BPR/transitions > /dev/null
-	curl -s -n -X POST --data '{"fields": {"assignee":{"name":"'$JIRAREVIEWER'"}, "customfield_10421":"'$PULLREQUESTURL'"}, "transition": {"id":"41"}}' -H "Content-Type: application/json" https://issues.liferay.com/rest/api/2/issue/$BPR/transitions > /dev/null
 
 	echo
 	echo Pull Request - $PULLREQUESTURL
-	echo BPR Ticket - https://issues.liferay.com/browse/$BPR
 }
