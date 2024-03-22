@@ -13,29 +13,30 @@ DEFAULTGITHUBREVIEWER=
 function bpr() {
 	case "$1" in
 		-h)
-			echo -e "Continue cherry picking from hash '$3'\n"
-			cherryPickCommit $2 $3
+			echo -e "Continue cherry picking from hash '$4'\n"
+			cherryPickCommit $2 $3 $4
 			;;
 		-s)
-			submitBpr $2
+			submitBpr $2 $3
 			;;
 		*)
 			echo -e "Peforming automated BPR\n"
-			checkoutBackportBranch $1
-			cherryPickCommit $1
+			checkoutBackportBranch $1 $2
+			cherryPickCommit $1 $2
 			;;
 	esac
 }
 
 function checkoutBackportBranch() {
-	BRANCH=$(grep -F lp.version.major= release.properties | cut -d'=' -f 2 | tr -d '.')x
+	git branch $1-$2 $2
 
-	git checkout -b $1-$BRANCH > /dev/null 2>&1
+	git checkout $1-$2
 }
 
 function cherryPickCommit() {
-	# $1 is the LPS ticket
-	# $2 is the starting hash
+	# $1 is the LPD ticket
+	# $2 is the release name (release-2023.q4)
+	# $3 is the starting hash
 
 	IFS=$'\n'
 
@@ -53,7 +54,7 @@ function cherryPickCommit() {
 	echo "Beginning cherry pick for ${#HASHES[@]} commit(s) that match '$1'"
 	echo
 
-	if [ $2 ]
+	if [ $3 ]
 	then
 		CHERRYPICK=false
 	else
@@ -62,7 +63,7 @@ function cherryPickCommit() {
 
 	for ((i = 0; i < ${#HASHES[@]}; i++))
 	do
-		if [[ $2 = ${HASHES[i]} ]]
+		if [[ $3 = ${HASHES[i]} ]]
 		then
 			CHERRYPICK=true
 		fi
@@ -82,9 +83,9 @@ function cherryPickCommit() {
 
 			if [[ $(($i + 1)) -lt ${#HASHES[@]} ]]
 			then
-				echo "Please resolve the conflict(s) and then run 'bpr -h $1 ${HASHES[i + 1]}'"
+				echo "Please resolve the conflict(s) and then run 'bpr -h $1 $2 ${HASHES[i + 1]}'"
 			else
-				echo "Please resolve the conflict(s) and then run 'bpr -s $1'"
+				echo "Please resolve the conflict(s) and then run 'bpr -s $1 $2'"
 			fi
 
 			return 0;
@@ -98,20 +99,19 @@ function cherryPickCommit() {
 
 	if [[ "$TEST" == y ]] || [[ "$TEST" == Y ]]
 	then
-		echo -e "\nWhen done testing, submit the backport by running 'bpr -s $1'"
+		echo -e "\nWhen done testing, submit the backport by running 'bpr -s $1 $2'"
 
 		return 0
 	fi
 
-	submitBpr $1
+	submitBpr $1 $2
 }
 
 function submitBpr() {
-	# $1 is the LPS ticket
+	# $1 is the LPD ticket
+	# $2 is the release name (release-2023.q4)
 
 	echo -e "\nSubmitting current branch for BPR\n"
-
-	BACKPORTVERION=$(grep -F lp.version.major= release.properties | cut -d'=' -f 2).x
 
 	# Get the reviewer's GitHub name
 	echo -n "Enter the reviewer's GitHub name and press [ENTER] ($DEFAULTGITHUBREVIEWER): "
@@ -122,24 +122,15 @@ function submitBpr() {
 		GITHUBREVIEWER=$DEFAULTGITHUBREVIEWER
 	fi
 
-	# Get the reviewer's Jira name
-	echo -n "Enter the reviewer's Jira name and press [ENTER] ($DEFAULTJIRAREVIEWER): "
-	read JIRAREVIEWER
-
-	if [[ -z $JIRAREVIEWER ]]
-	then
-		JIRAREVIEWER=$DEFAULTJIRAREVIEWER
-	fi
-
 	# Get the current branch name
 	CURRENTBRANCH=$(git rev-parse --abbrev-ref HEAD)
 
 	git push origin $CURRENTBRANCH > /dev/null 2>&1
 
 	# Create the pull request
-	PULLREQUESTURL=$(git pull-request -m "$1 | $BACKPORTVERION
+	PULLREQUESTURL=$(git pull-request -m "$1 | $2
 
-https://issues.liferay.com/browse/$1" -b $GITHUBREVIEWER:$BACKPORTVERION -h $CURRENTUSERGITHUBNAME:$CURRENTBRANCH)
+https://issues.liferay.com/browse/$1" -b $GITHUBREVIEWER:$2 -h $CURRENTUSERGITHUBNAME:$CURRENTBRANCH)
 
 	echo
 	echo Pull Request - $PULLREQUESTURL
